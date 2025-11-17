@@ -88,6 +88,9 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		throw new Error('Icon name is required');
 	}
 	
+	// Parse size to number (since Glide passes it as string)
+	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
+	
 	try {
 		// Fetch the icon SVG
 		const svg = await fetchIconSVG(iconName);
@@ -104,8 +107,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			<svg 
 				role="img" 
 				viewBox="0 0 24 24" 
-				width="${size}" 
-				height="${size}" 
+				width="${sizeNum}" 
+				height="${sizeNum}" 
 				xmlns="http://www.w3.org/2000/svg"
 				style="display: inline-block; vertical-align: middle;"
 			>
@@ -126,6 +129,9 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 		return '<span style="color: red;">Error: Icon name is required</span>';
 	}
 	
+	// Parse size to number (since Glide passes it as string)
+	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
+	
 	// Try to get from cache first
 	const cachedSVG = iconCache.get(iconName);
 	if (cachedSVG) {
@@ -135,8 +141,8 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 				<svg 
 					role="img" 
 					viewBox="0 0 24 24" 
-					width="${size}" 
-					height="${size}" 
+					width="${sizeNum}" 
+					height="${sizeNum}" 
 					xmlns="http://www.w3.org/2000/svg"
 					style="display: inline-block; vertical-align: middle;"
 				>
