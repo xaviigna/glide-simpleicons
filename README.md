@@ -2,6 +2,8 @@
 
 A Glide plugin that allows you to use icons from [Simple Icons](https://simpleicons.org/) - a free collection of brand icons. Customize the icon name, color, and size directly in Glide.
 
+Created by [@xaviigna](https://github.com/xaviigna)
+
 ## Features
 
 - 🎨 **3000+ Brand Icons** - Access all icons from the Simple Icons collection
@@ -71,4 +73,3 @@ You can find all available icons at [simpleicons.org](https://simpleicons.org/).
 ## License
 
 This plugin uses Simple Icons, which are licensed under CC0-1.0 (Public Domain).
-
