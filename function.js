@@ -1,0 +1,169 @@
+/**
+ * Glide Plugin Function for Simple Icons
+ * Renders Simple Icons with customizable color and size
+ */
+
+// Cache for icon SVGs
+const iconCache = new Map();
+
+// Convert title to slug (matching simple-icons naming convention)
+// This matches the SDK implementation
+const TITLE_TO_SLUG_REPLACEMENTS = {
+	'+': 'plus',
+	'.': 'dot',
+	'&': 'and',
+	'đ': 'd',
+	'ħ': 'h',
+	'ı': 'i',
+	'ĸ': 'k',
+	'ŀ': 'l',
+	'ł': 'l',
+	'ß': 'ss',
+	'ŧ': 't',
+	'ø': 'o',
+};
+
+const TITLE_TO_SLUG_CHARS_REGEX = new RegExp(
+	`[${Object.keys(TITLE_TO_SLUG_REPLACEMENTS).join('')}]`,
+	'g',
+);
+
+const TITLE_TO_SLUG_RANGE_REGEX = /[^a-z\d]/g;
+
+function titleToSlug(title) {
+	return title
+		.toLowerCase()
+		.replaceAll(
+			TITLE_TO_SLUG_CHARS_REGEX,
+			(char) => TITLE_TO_SLUG_REPLACEMENTS[char] || char,
+		)
+		.normalize('NFD')
+		.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
+}
+
+// Fetch icon SVG from CDN
+async function fetchIconSVG(iconName) {
+	// Check cache first (by both name and slug)
+	const slug = titleToSlug(iconName);
+	if (iconCache.has(iconName)) {
+		return iconCache.get(iconName);
+	}
+	if (iconCache.has(slug)) {
+		const svg = iconCache.get(slug);
+		iconCache.set(iconName, svg); // Cache by name too
+		return svg;
+	}
+	
+	try {
+		// Try fetching by slug
+		const url = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
+		
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
+		}
+		
+		const svg = await response.text();
+		// Cache by both name and slug for faster lookups
+		iconCache.set(iconName, svg);
+		iconCache.set(slug, svg);
+		return svg;
+	} catch (error) {
+		console.error(`Error fetching icon ${iconName}:`, error);
+		throw error;
+	}
+}
+
+// Extract path from SVG
+function extractPathFromSVG(svg) {
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(svg, 'image/svg+xml');
+	const path = doc.querySelector('path');
+	return path ? path.getAttribute('d') : null;
+}
+
+// Render Simple Icon
+async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
+	if (!iconName) {
+		throw new Error('Icon name is required');
+	}
+	
+	try {
+		// Fetch the icon SVG
+		const svg = await fetchIconSVG(iconName);
+		
+		// Extract the path from the SVG
+		const pathData = extractPathFromSVG(svg);
+		
+		if (!pathData) {
+			throw new Error(`Could not extract path from icon: ${iconName}`);
+		}
+		
+		// Create new SVG with custom color and size
+		const newSVG = `
+			<svg 
+				role="img" 
+				viewBox="0 0 24 24" 
+				width="${size}" 
+				height="${size}" 
+				xmlns="http://www.w3.org/2000/svg"
+				style="display: inline-block; vertical-align: middle;"
+			>
+				<path d="${pathData}" fill="${color}"/>
+			</svg>
+		`;
+		
+		return newSVG;
+	} catch (error) {
+		console.error('Error rendering icon:', error);
+		return `<span style="color: red;">Error: ${error.message}</span>`;
+	}
+}
+
+// Synchronous version for immediate rendering (uses cached data if available)
+function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
+	if (!iconName) {
+		return '<span style="color: red;">Error: Icon name is required</span>';
+	}
+	
+	// Try to get from cache first
+	const cachedSVG = iconCache.get(iconName);
+	if (cachedSVG) {
+		const pathData = extractPathFromSVG(cachedSVG);
+		if (pathData) {
+			return `
+				<svg 
+					role="img" 
+					viewBox="0 0 24 24" 
+					width="${size}" 
+					height="${size}" 
+					xmlns="http://www.w3.org/2000/svg"
+					style="display: inline-block; vertical-align: middle;"
+				>
+					<path d="${pathData}" fill="${color}"/>
+				</svg>
+			`;
+		}
+	}
+	
+	// If not cached, return placeholder and trigger async load
+	renderSimpleIcon(iconName, color, size).catch(() => {});
+	return `<span style="color: #999;">Loading icon: ${iconName}...</span>`;
+}
+
+// Main function for Glide
+function renderIcon(iconName, color = '#000000', size = 24) {
+	// For Glide, we'll use the async version but return a promise
+	// Glide should handle promises
+	return renderSimpleIcon(iconName, color, size);
+}
+
+// Export for different environments
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = { renderIcon, renderSimpleIcon, renderSimpleIconSync };
+} else {
+	window.renderSimpleIcon = renderSimpleIcon;
+	window.renderSimpleIconSync = renderSimpleIconSync;
+	window.renderIcon = renderIcon;
+}
+

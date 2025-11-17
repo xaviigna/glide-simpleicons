@@ -1,0 +1,30 @@
+{
+	"name": "Simple Icons",
+	"description": "Use icons from Simple Icons - a free collection of brand icons by @xaviigna",
+	"version": "1.0.0",
+	"author": "Simple Icons",
+	"functions": [
+		{
+			"name": "renderIcon",
+			"description": "Render a Simple Icon with customizable color and size",
+			"parameters": {
+				"iconName": {
+					"type": "string",
+					"description": "The name of the icon (e.g., 'Google', 'GitHub', 'React')",
+					"required": true
+				},
+				"color": {
+					"type": "string",
+					"description": "The color of the icon (hex code, e.g., '#FF5733' or 'red')",
+					"default": "#000000"
+				},
+				"size": {
+					"type": "number",
+					"description": "The size of the icon in pixels",
+					"default": 24
+				}
+			}
+		}
+	]
+}
+
