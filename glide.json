@@ -1,39 +1,29 @@
-{
-	"name": "Simple Icons",
-	"description": "Use icons from Simple Icons - a free collection of brand icons by @xaviigna",
-	"version": "1.0.0",
-	"author": "Simple Icons",
-	"functions": [
-		{
-			"kind": "column",
-			"name": "renderIcon",
-			"description": "Render a Simple Icon with customizable color and size",
-			"params": [
-				{
-					"name": "iconName",
-					"type": "string",
-					"description": "The name of the icon (e.g., 'Google', 'GitHub', 'React')",
-					"required": true
-				},
-				{
-					"name": "color",
-					"type": "string",
-					"description": "The color of the icon (hex code, e.g., '#FF5733' or 'red')",
-					"default": "#000000",
-					"required": false
-				},
-				{
-					"name": "size",
-					"type": "number",
-					"description": "The size of the icon in pixels",
-					"default": 24,
-					"required": false
-				}
-			],
-			"result": {
+[
+	{
+		"kind": "column",
+		"name": "Simple Icons",
+		"description": "Use icons from Simple Icons - a free collection of brand icons. Customize the icon name, color, and size.",
+		"author": "@xaviigna",
+		"params": [
+			{
+				"name": "iconName",
+				"displayName": "Icon Name (e.g., Google, GitHub, React)",
 				"type": "string"
+			},
+			{
+				"name": "color",
+				"displayName": "Color (hex code or color name, default: #000000)",
+				"type": "string"
+			},
+			{
+				"name": "size",
+				"displayName": "Size in pixels (default: 24)",
+				"type": "number"
 			}
+		],
+		"result": {
+			"type": "string"
 		}
-	]
-}
+	}
+]
 
