@@ -5,24 +5,33 @@
 	"author": "Simple Icons",
 	"functions": [
 		{
+			"kind": "column",
 			"name": "renderIcon",
 			"description": "Render a Simple Icon with customizable color and size",
-			"parameters": {
-				"iconName": {
+			"params": [
+				{
+					"name": "iconName",
 					"type": "string",
 					"description": "The name of the icon (e.g., 'Google', 'GitHub', 'React')",
 					"required": true
 				},
-				"color": {
+				{
+					"name": "color",
 					"type": "string",
 					"description": "The color of the icon (hex code, e.g., '#FF5733' or 'red')",
-					"default": "#000000"
+					"default": "#000000",
+					"required": false
 				},
-				"size": {
+				{
+					"name": "size",
 					"type": "number",
 					"description": "The size of the icon in pixels",
-					"default": 24
+					"default": 24,
+					"required": false
 				}
+			],
+			"result": {
+				"type": "string"
 			}
 		}
 	]
