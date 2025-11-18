@@ -27,46 +27,44 @@ async function loadIconsData() {
 }
 
 // Convert title to slug (matching simple-icons naming convention)
-// Only declare if not already defined (function.js may have already declared it)
-if (typeof TITLE_TO_SLUG_REPLACEMENTS === 'undefined') {
-	var TITLE_TO_SLUG_REPLACEMENTS = {
-		'+': 'plus',
-		'.': 'dot',
-		'&': 'and',
-		'đ': 'd',
-		'ħ': 'h',
-		'ı': 'i',
-		'ĸ': 'k',
-		'ŀ': 'l',
-		'ł': 'l',
-		'ß': 'ss',
-		'ŧ': 't',
-		'ø': 'o',
-	};
-}
-
-if (typeof TITLE_TO_SLUG_CHARS_REGEX === 'undefined') {
-	var TITLE_TO_SLUG_CHARS_REGEX = new RegExp(
-		`[${Object.keys(TITLE_TO_SLUG_REPLACEMENTS).join('')}]`,
-		'g',
-	);
-}
-
-if (typeof TITLE_TO_SLUG_RANGE_REGEX === 'undefined') {
-	var TITLE_TO_SLUG_RANGE_REGEX = /[^a-z\d]/g;
-}
-
+// Use the function from function.js (loaded first) - don't redeclare
+// If function.js isn't loaded, provide a fallback in a separate scope
 if (typeof titleToSlug === 'undefined') {
-	function titleToSlug(title) {
-		return title
-			.toLowerCase()
-			.replaceAll(
-				TITLE_TO_SLUG_CHARS_REGEX,
-				(char) => TITLE_TO_SLUG_REPLACEMENTS[char] || char,
-			)
-			.normalize('NFD')
-			.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
-	}
+	// Fallback implementation in isolated scope (shouldn't be needed since function.js loads first)
+	(function() {
+		const TITLE_TO_SLUG_REPLACEMENTS = {
+			'+': 'plus',
+			'.': 'dot',
+			'&': 'and',
+			'đ': 'd',
+			'ħ': 'h',
+			'ı': 'i',
+			'ĸ': 'k',
+			'ŀ': 'l',
+			'ł': 'l',
+			'ß': 'ss',
+			'ŧ': 't',
+			'ø': 'o',
+		};
+		
+		const TITLE_TO_SLUG_CHARS_REGEX = new RegExp(
+			`[${Object.keys(TITLE_TO_SLUG_REPLACEMENTS).join('')}]`,
+			'g',
+		);
+		
+		const TITLE_TO_SLUG_RANGE_REGEX = /[^a-z\d]/g;
+		
+		window.titleToSlug = function(title) {
+			return title
+				.toLowerCase()
+				.replaceAll(
+					TITLE_TO_SLUG_CHARS_REGEX,
+					(char) => TITLE_TO_SLUG_REPLACEMENTS[char] || char,
+				)
+				.normalize('NFD')
+				.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
+		};
+	})();
 }
 
 // Get icon by name (title or slug)
