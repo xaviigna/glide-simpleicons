@@ -151,14 +151,28 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			throw new Error('Empty SVG content');
 		}
 		
+		// Validate SVG structure - must start with <svg and end with </svg>
+		if (!svgContent.trim().startsWith('<svg')) {
+			throw new Error('Invalid SVG: does not start with <svg');
+		}
+		if (!svgContent.includes('</svg>')) {
+			throw new Error('Invalid SVG: missing closing </svg> tag');
+		}
+		
+		// Log full SVG for debugging (first 200 chars)
+		console.log('SVG preview (first 200 chars):', svgContent.substring(0, 200));
+		console.log('SVG ends with:', svgContent.substring(svgContent.length - 50));
+		console.log('SVG length:', svgContent.length);
+		
 		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
-		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
+		// Use proper UTF-8 encoding
+		const utf8Bytes = new TextEncoder().encode(svgContent);
+		const base64 = btoa(String.fromCharCode(...utf8Bytes));
 		const svgDataUrl = `data:image/svg+xml;base64,${base64}`;
 		
-		console.log('SVG length:', svgContent.length);
 		console.log('Base64 length:', base64.length);
 		console.log('Data URL length:', svgDataUrl.length);
-		console.log('Data URL preview:', svgDataUrl.substring(0, 100) + '...');
+		console.log('Data URL preview (first 150 chars):', svgDataUrl.substring(0, 150));
 		
 		return svgDataUrl;
 	} catch (error) {
