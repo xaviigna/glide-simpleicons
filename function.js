@@ -65,6 +65,7 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		
 		// Fetch the SVG from CDN
 		let response = await fetch(cdnUrl);
+		let fromCDN = response.ok;
 		
 		// Fallback to jsDelivr if CDN fails
 		if (!response.ok) {
@@ -87,7 +88,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		}
 		
 		// If from jsDelivr (not CDN), apply color manually
-		if (!cdnUrl.includes('cdn.simpleicons.org') || !response.ok) {
+		// CDN already handles colors, so only apply if we used jsDelivr fallback
+		if (!fromCDN) {
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
