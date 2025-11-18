@@ -208,7 +208,7 @@
 		
 		async function loadIconsData() {
 			try {
-				const response = await fetch('https://cdn.jsdelivr.net/npm/simple-icons@latest/icons.json');
+				const response = await fetch('https://cdn.jsdelivr.net/npm/simple-icons@latest/data/simple-icons.json');
 				iconsData = await response.json();
 				
 				// Populate datalist
