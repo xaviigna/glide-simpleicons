@@ -6,6 +6,13 @@
 
 console.log('Simple Icons function.js loaded');
 
+// Test that code is executing
+try {
+	console.log('Code execution test - defining functions...');
+} catch (e) {
+	console.error('Error in function.js:', e);
+}
+
 // Convert title to slug (matching simple-icons naming convention)
 const TITLE_TO_SLUG_REPLACEMENTS = {
 	'+': 'plus',
@@ -114,6 +121,7 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 }
 
 // Main function for Glide
+console.log('About to define window.function...');
 window.function = async function(iconName, color, size) {
 	console.log('=== window.function called by Glide ===');
 	console.log('Raw params:', { iconName, color, size });
@@ -141,3 +149,7 @@ window.function = async function(iconName, color, size) {
 
 // Export for testing
 window.renderSimpleIcon = renderSimpleIcon;
+
+// Log that everything is set up
+console.log('window.function defined:', typeof window.function);
+console.log('window.renderSimpleIcon defined:', typeof window.renderSimpleIcon);
