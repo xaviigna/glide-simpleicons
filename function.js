@@ -165,9 +165,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		console.log('SVG length:', svgContent.length);
 		
 		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
-		// Use proper UTF-8 encoding
-		const utf8Bytes = new TextEncoder().encode(svgContent);
-		const base64 = btoa(String.fromCharCode(...utf8Bytes));
+		// Standard UTF-8 to base64 encoding
+		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
 		const svgDataUrl = `data:image/svg+xml;base64,${base64}`;
 		
 		console.log('Base64 length:', base64.length);
