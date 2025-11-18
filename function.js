@@ -92,22 +92,34 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
 	
 	try {
-		// Fetch the icon SVG
-		const svg = await fetchIconSVG(iconName);
+		// Convert icon name to slug
+		const slug = titleToSlug(iconName);
 		
-		// Extract the path from the SVG
-		const pathData = extractPathFromSVG(svg);
+		// Use Simple Icons CDN service which handles colors (per their docs)
+		// Format: https://cdn.simpleicons.org/[ICON SLUG]/[COLOR]
+		// Remove # from color if present
+		const colorCode = color.replace('#', '');
+		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
-		if (!pathData) {
-			console.error(`Could not extract path from icon: ${iconName}`);
-			return "";
+		console.log('Fetching from Simple Icons CDN:', cdnUrl);
+		
+		// Fetch the colored SVG from Simple Icons CDN
+		const response = await fetch(cdnUrl);
+		if (!response.ok) {
+			throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
 		}
 		
-		// Create new SVG with custom color and size
-		const newSVG = `<svg role="img" viewBox="0 0 24 24" width="${sizeNum}" height="${sizeNum}" xmlns="http://www.w3.org/2000/svg"><path d="${pathData}" fill="${color}"/></svg>`;
+		let svgContent = await response.text();
+		
+		// Modify SVG to add size (CDN doesn't support size parameter)
+		// Replace viewBox and add width/height
+		svgContent = svgContent.replace(
+			/<svg([^>]*)>/,
+			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
+		);
 		
 		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
-		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(newSVG)))}`;
+		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
 		
 		return svgDataUrl;
 	} catch (error) {
