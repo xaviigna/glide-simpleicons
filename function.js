@@ -94,25 +94,37 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	try {
 		// Convert icon name to slug
 		const slug = titleToSlug(iconName);
+		let svgContent = null;
 		
-		// Use Simple Icons CDN service which handles colors (per their docs)
+		// Try Simple Icons CDN service first (handles colors)
 		// Format: https://cdn.simpleicons.org/[ICON SLUG]/[COLOR]
-		// Remove # from color if present
 		const colorCode = color.replace('#', '');
 		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
-		console.log('Fetching from Simple Icons CDN:', cdnUrl);
-		
-		// Fetch the colored SVG from Simple Icons CDN
-		const response = await fetch(cdnUrl);
-		if (!response.ok) {
-			throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
+		try {
+			const response = await fetch(cdnUrl);
+			if (response.ok) {
+				svgContent = await response.text();
+			}
+		} catch (e) {
+			// CDN service failed, fall back to jsDelivr
 		}
 		
-		let svgContent = await response.text();
+		// Fallback: Fetch from jsDelivr and apply color ourselves
+		if (!svgContent) {
+			const jsDelivrUrl = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
+			const response = await fetch(jsDelivrUrl);
+			if (!response.ok) {
+				throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
+			}
+			
+			svgContent = await response.text();
+			
+			// Apply color to the SVG
+			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
+		}
 		
-		// Modify SVG to add size (CDN doesn't support size parameter)
-		// Replace viewBox and add width/height
+		// Modify SVG to add size
 		svgContent = svgContent.replace(
 			/<svg([^>]*)>/,
 			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
@@ -165,32 +177,22 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 // Main function for Glide - must be exported as window.function
 // Following the same pattern as Loqode icons plugin
 window.function = async function(iconName, color, size) {
-	console.log('=== Simple Icons Plugin Called ===');
-	console.log('Raw parameters:', { iconName, color, size });
-	
-	// Get values or set defaults (same pattern as Loqode)
+	// Get values or set defaults (same pattern as Loqode - using .value property)
 	iconName = iconName?.value || iconName || "";
 	color = color?.value || color || "#000000";
 	size = size?.value || size || "24";
 	
-	console.log('Parsed parameters:', { iconName, color, size });
-	
 	// If no icon name, return empty
 	if (!iconName) {
-		console.warn('Simple Icons: No icon name provided');
 		return "";
 	}
 	
 	try {
-		console.log('Fetching icon:', iconName);
 		// Call the render function
 		const result = await renderSimpleIcon(iconName, color, size);
-		console.log('Icon result:', result ? `Success (${result.length} chars)` : 'Empty');
 		return result || "";
 	} catch (error) {
-		console.error('=== Simple Icons Error ===');
 		console.error('Failed to fetch or process the SVG:', error);
-		console.error('Error details:', error.message, error.stack);
 		return ""; // Return empty on error
 	}
 }
