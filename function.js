@@ -106,8 +106,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		// Create new SVG with custom color and size
 		const newSVG = `<svg role="img" viewBox="0 0 24 24" width="${sizeNum}" height="${sizeNum}" xmlns="http://www.w3.org/2000/svg"><path d="${pathData}" fill="${color}"/></svg>`;
 		
-		// Convert SVG to data URL (base64 encoded)
-		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(newSVG)))}`;
+		// Convert SVG to data URL (URL encoded - more reliable than base64)
+		const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(newSVG)}`;
 		
 		return svgDataUrl;
 	} catch (error) {
@@ -152,13 +152,25 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 
 // Main function for Glide - must be exported as window.function
 window.function = async function(iconName, color, size) {
-	// Get values from Glide parameters (they come as objects with .value property)
-	const iconNameValue = iconName?.value || iconName || "";
-	const colorValue = color?.value || color || "#000000";
-	const sizeValue = size?.value || size || "24";
-	
-	// Call the render function
-	return await renderSimpleIcon(iconNameValue, colorValue, sizeValue);
+	try {
+		// Get values from Glide parameters (they come as objects with .value property)
+		const iconNameValue = iconName?.value || iconName || "";
+		const colorValue = color?.value || color || "#000000";
+		const sizeValue = size?.value || size || "24";
+		
+		// Debug logging (remove in production)
+		console.log('Simple Icons Plugin:', { iconNameValue, colorValue, sizeValue });
+		
+		// Call the render function
+		const result = await renderSimpleIcon(iconNameValue, colorValue, sizeValue);
+		
+		console.log('Simple Icons Plugin Result:', result ? 'Data URL generated' : 'Empty result');
+		
+		return result;
+	} catch (error) {
+		console.error('Simple Icons Plugin Error:', error);
+		return ""; // Return empty string on error
+	}
 }
 
 // Also export for backwards compatibility and testing
