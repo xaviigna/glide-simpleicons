@@ -222,7 +222,7 @@ async function init() {
 	previewContainer.style.backgroundColor = '#f9f9f9';
 	
 	// Update preview function
-	function updatePreview() {
+	async function updatePreview() {
 		const iconName = iconNameInput.value.trim();
 		const color = colorTextInput.value || '#000000';
 		const size = parseInt(sizeInput.value) || 24;
@@ -240,18 +240,28 @@ async function init() {
 		
 		// Call the function to render
 		if (window.renderSimpleIcon) {
-			const svg = window.renderSimpleIcon(iconName, color, size);
-			previewContainer.innerHTML = svg;
+			previewContainer.innerHTML = '<p style="color: #999;">Rendering preview...</p>';
+			try {
+				const dataUrl = await window.renderSimpleIcon(iconName, color, size);
+				if (!dataUrl) {
+					previewContainer.innerHTML = `<p style="color: #d32f2f;">Failed to render icon.</p>`;
+					return;
+				}
+				previewContainer.innerHTML = `<img src="${dataUrl}" alt="${iconName}" width="${size}" height="${size}" />`;
+			} catch (error) {
+				console.error('Preview render error:', error);
+				previewContainer.innerHTML = `<p style="color: #d32f2f;">Error rendering preview.</p>`;
+			}
 		} else {
 			previewContainer.innerHTML = `<p style="color: #999;">Loading render function...</p>`;
 		}
 	}
 	
 	// Add event listeners
-	iconNameInput.addEventListener('input', updatePreview);
-	colorInput.addEventListener('input', updatePreview);
-	colorTextInput.addEventListener('input', updatePreview);
-	sizeInput.addEventListener('input', updatePreview);
+	iconNameInput.addEventListener('input', () => updatePreview());
+	colorInput.addEventListener('input', () => updatePreview());
+	colorTextInput.addEventListener('input', () => updatePreview());
+	sizeInput.addEventListener('input', () => updatePreview());
 	
 	// Assemble the UI
 	container.appendChild(iconNameLabel);

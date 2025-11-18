@@ -6,6 +6,31 @@
 
 console.log('Simple Icons function.js loaded');
 
+const DEFAULT_REMOTE_ASSET_URL =
+	'https://xaviigna.github.io/glide-simpleicons/assets/simple';
+
+const DEFAULT_LOCAL_ASSET_URL =
+	typeof window !== 'undefined'
+		? new URL('./assets/simple/', window.location.href).href.replace(/\/$/, '')
+		: '';
+
+const SIMPLE_ICONS_BASE_URL = (() => {
+	if (typeof window === 'undefined') {
+		return DEFAULT_REMOTE_ASSET_URL;
+	}
+
+	if (window.SIMPLE_ICONS_BASE_URL) {
+		return window.SIMPLE_ICONS_BASE_URL.replace(/\/$/, '');
+	}
+
+	const isLocalEnv =
+		window.location.protocol === 'file:' || window.location.hostname === 'localhost';
+
+	return (isLocalEnv ? DEFAULT_LOCAL_ASSET_URL : DEFAULT_REMOTE_ASSET_URL).replace(/\/$/, '');
+})();
+
+const ICON_CACHE = new Map();
+
 // Test that code is executing
 try {
 	console.log('Code execution test - defining functions...');
@@ -47,8 +72,31 @@ function titleToSlug(title) {
 		.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
 }
 
-// Render Simple Icon - returns data URL for Glide
-// According to README: cdn.simpleicons.org returns complete SVG images
+async function loadIconSvg(slug) {
+	if (ICON_CACHE.has(slug)) {
+		return ICON_CACHE.get(slug);
+	}
+
+	const svgUrl = `${SIMPLE_ICONS_BASE_URL}/${slug}.svg`;
+	const response = await fetch(svgUrl, { cache: 'force-cache' });
+
+	if (!response.ok) {
+		throw new Error(`Icon not found at ${svgUrl}`);
+	}
+
+	const svgText = await response.text();
+	ICON_CACHE.set(slug, svgText);
+	return svgText;
+}
+
+function applyColor(svgContent, color) {
+	return svgContent.replace(/<svg([^>]*)>/i, (match, attrs) => {
+		const sanitizedAttrs = attrs.replace(/\sfill="[^"]*"/gi, '');
+		return `<svg${sanitizedAttrs} fill="${color}">`;
+	});
+}
+
+// Render Simple Icon - returns data URL for Glide using hosted assets
 async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	if (!iconName) {
 		return "";
@@ -58,25 +106,7 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	const slug = titleToSlug(iconName);
 	
 	try {
-		// Use Simple Icons CDN - it returns complete SVG images
-		// Format: https://cdn.simpleicons.org/[SLUG]/[COLOR]
-		const colorCode = color.replace('#', '');
-		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
-		
-		// Fetch the SVG from CDN
-		let response = await fetch(cdnUrl);
-		let fromCDN = response.ok;
-		
-		// Fallback to jsDelivr if CDN fails
-		if (!response.ok) {
-			const jsDelivrUrl = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
-			response = await fetch(jsDelivrUrl);
-			if (!response.ok) {
-				throw new Error(`Icon not found: ${iconName} (slug: ${slug})`);
-			}
-		}
-		
-		let svgContent = await response.text();
+		let svgContent = await loadIconSvg(slug);
 		
 		// Validate we got a complete SVG
 		if (!svgContent || !svgContent.trim()) {
@@ -87,13 +117,10 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			throw new Error('SVG missing closing tag');
 		}
 		
-		// If from jsDelivr (not CDN), apply color manually
-		// CDN already handles colors, so only apply if we used jsDelivr fallback
-		if (!fromCDN) {
-			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
-		}
+		// Apply the requested color
+		const sanitizedColor = color?.trim() || '#000000';
+		svgContent = applyColor(svgContent, sanitizedColor);
 		
-		// Add width and height attributes
 		// Remove existing width/height first
 		svgContent = svgContent.replace(/\s*width\s*=\s*"[^"]*"/gi, '');
 		svgContent = svgContent.replace(/\s*height\s*=\s*"[^"]*"/gi, '');

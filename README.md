@@ -18,6 +18,7 @@ Created by [@xaviigna](https://github.com/xaviigna)
 - `driver.js` - UI driver that creates the plugin interface
 - `function.js` - Core function that renders the icons
 - `index.html` - Preview page to test the plugin locally
+- `assets/simple` - Local copy of the Simple Icons SVGs used when hosting the assets yourself
 
 ## Usage in Glide
 
@@ -65,10 +66,11 @@ You can find all available icons at [simpleicons.org](https://simpleicons.org/).
 
 ## Technical Details
 
-- Icons are fetched from the Simple Icons CDN (jsDelivr)
-- SVG paths are extracted and rendered with custom colors
-- Icons maintain their 24x24 viewBox for proper scaling
-- Caching is implemented for better performance
+- Icons are bundled from the official [`simple-icons`](https://github.com/simple-icons/simple-icons) repo (see `assets/simple`)
+- By default the plugin fetches icons from `https://xaviigna.github.io/glide-simpleicons/assets/simple`
+- Set `window.SIMPLE_ICONS_BASE_URL` before loading `function.js` if you host the assets elsewhere
+- SVGs are recolored, resized, and returned as base64 data URLs so Glide columns resolve instantly
+- A tiny in-memory cache prevents repeat network calls inside the Experimental Code runtime
 
 ## License
 
