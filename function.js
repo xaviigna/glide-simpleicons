@@ -48,6 +48,7 @@ function titleToSlug(title) {
 }
 
 // Render Simple Icon - returns data URL for Glide
+// According to README: cdn.simpleicons.org returns complete SVG images
 async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	if (!iconName) {
 		return "";
@@ -57,30 +58,26 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	const slug = titleToSlug(iconName);
 	
 	try {
-		// Use Simple Icons CDN with color
+		// Use Simple Icons CDN - it returns complete SVG images
+		// Format: https://cdn.simpleicons.org/[SLUG]/[COLOR]
 		const colorCode = color.replace('#', '');
 		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
+		// Fetch the SVG from CDN
 		let response = await fetch(cdnUrl);
-		let fromCDN = response.ok;
 		
 		// Fallback to jsDelivr if CDN fails
 		if (!response.ok) {
 			const jsDelivrUrl = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
 			response = await fetch(jsDelivrUrl);
 			if (!response.ok) {
-				throw new Error(`Icon not found: ${iconName}`);
+				throw new Error(`Icon not found: ${iconName} (slug: ${slug})`);
 			}
 		}
 		
 		let svgContent = await response.text();
 		
-		// If from jsDelivr (not CDN), apply color manually
-		if (!fromCDN) {
-			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
-		}
-		
-		// Validate SVG is complete before modifying
+		// Validate we got a complete SVG
 		if (!svgContent || !svgContent.trim()) {
 			throw new Error('Empty SVG content');
 		}
@@ -89,30 +86,25 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			throw new Error('SVG missing closing tag');
 		}
 		
-		// Add/modify width and height - simple approach like Loqode
-		// Remove existing width/height first to avoid duplicates
+		// If from jsDelivr (not CDN), apply color manually
+		if (!cdnUrl.includes('cdn.simpleicons.org') || !response.ok) {
+			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
+		}
+		
+		// Add width and height attributes
+		// Remove existing width/height first
 		svgContent = svgContent.replace(/\s*width\s*=\s*"[^"]*"/gi, '');
 		svgContent = svgContent.replace(/\s*height\s*=\s*"[^"]*"/gi, '');
 		
-		// Add width and height to the opening svg tag
+		// Add new width and height
 		svgContent = svgContent.replace(
 			/<svg([^>]*?)>/,
 			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 		);
 		
-		// Log for debugging
-		console.log('SVG length:', svgContent.length);
-		console.log('SVG starts with:', svgContent.substring(0, 100));
-		console.log('SVG ends with:', svgContent.substring(svgContent.length - 50));
-		
-		// Convert to base64 data URL (same as Loqode)
+		// Convert to base64 data URL (Glide needs data URL, not regular URL)
 		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
-		const dataUrl = `data:image/svg+xml;base64,${base64}`;
-		
-		console.log('Data URL length:', dataUrl.length);
-		console.log('Data URL preview:', dataUrl.substring(0, 150));
-		
-		return dataUrl;
+		return `data:image/svg+xml;base64,${base64}`;
 		
 	} catch (error) {
 		console.error('Error rendering icon:', error);
