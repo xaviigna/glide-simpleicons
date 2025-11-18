@@ -178,9 +178,15 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 // Following the same pattern as Loqode icons plugin
 window.function = async function(iconName, color, size) {
 	// Get values or set defaults (same pattern as Loqode - using .value property)
-	iconName = iconName?.value || iconName || "";
-	color = color?.value || color || "#000000";
-	size = size?.value || size || "24";
+	// Handle column references from Glide
+	iconName = iconName?.value ?? iconName ?? "";
+	color = color?.value ?? color ?? "#000000";
+	size = size?.value ?? size ?? "24";
+	
+	// Convert to string and trim whitespace
+	iconName = String(iconName).trim();
+	color = String(color).trim() || "#000000";
+	size = String(size).trim() || "24";
 	
 	// If no icon name, return empty
 	if (!iconName) {
