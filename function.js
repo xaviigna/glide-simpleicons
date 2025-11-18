@@ -6,38 +6,6 @@
 
 console.log('Simple Icons function.js loaded');
 
-const DEFAULT_REMOTE_ASSET_URL =
-	'https://xaviigna.github.io/glide-simpleicons/assets/simple';
-
-const DEFAULT_LOCAL_ASSET_URL =
-	typeof window !== 'undefined'
-		? new URL('./assets/simple/', window.location.href).href.replace(/\/$/, '')
-		: '';
-
-const SIMPLE_ICONS_BASE_URL = (() => {
-	if (typeof window === 'undefined') {
-		return DEFAULT_REMOTE_ASSET_URL;
-	}
-
-	if (window.SIMPLE_ICONS_BASE_URL) {
-		return window.SIMPLE_ICONS_BASE_URL.replace(/\/$/, '');
-	}
-
-	const isLocalEnv =
-		window.location.protocol === 'file:' || window.location.hostname === 'localhost';
-
-	return (isLocalEnv ? DEFAULT_LOCAL_ASSET_URL : DEFAULT_REMOTE_ASSET_URL).replace(/\/$/, '');
-})();
-
-const ICON_CACHE = new Map();
-
-// Test that code is executing
-try {
-	console.log('Code execution test - defining functions...');
-} catch (e) {
-	console.error('Error in function.js:', e);
-}
-
 // Convert title to slug (matching simple-icons naming convention)
 const TITLE_TO_SLUG_REPLACEMENTS = {
 	'+': 'plus',
@@ -72,117 +40,46 @@ function titleToSlug(title) {
 		.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
 }
 
-async function loadIconSvg(slug) {
-	if (ICON_CACHE.has(slug)) {
-		return ICON_CACHE.get(slug);
-	}
-
-	const svgUrl = `${SIMPLE_ICONS_BASE_URL}/${slug}.svg`;
-	const response = await fetch(svgUrl, { cache: 'force-cache' });
-
-	if (!response.ok) {
-		throw new Error(`Icon not found at ${svgUrl}`);
-	}
-
-	const svgText = await response.text();
-	ICON_CACHE.set(slug, svgText);
-	return svgText;
-}
-
-function applyColor(svgContent, color) {
-	return svgContent.replace(/<svg([^>]*)>/i, (match, attrs) => {
-		const sanitizedAttrs = attrs.replace(/\sfill="[^"]*"/gi, '');
-		return `<svg${sanitizedAttrs} fill="${color}">`;
-	});
-}
-
-// Render Simple Icon - returns data URL for Glide using hosted assets
-async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
+// Main function for Glide - same pattern as Loqode
+window.function = async function(iconName, color, size) {
+	// Get values or set defaults (same pattern as Loqode)
+	iconName = iconName?.value || iconName || "";
+	color = color?.value || color || "#000000";
+	size = size?.value || size || "24";
+	
 	if (!iconName) {
 		return "";
 	}
 	
-	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
+	// Convert icon name to slug
 	const slug = titleToSlug(iconName);
 	
+	// Construct the URL to the SVG file (same approach as Loqode)
+	const svgUrl = `https://xaviigna.github.io/glide-simpleicons/assets/simple/${slug}.svg`;
+	
 	try {
-		let svgContent = await loadIconSvg(slug);
+		// Fetch the SVG file from the URL (same as Loqode)
+		const response = await fetch(svgUrl);
+		let svgContent = await response.text();
 		
-		// Validate we got a complete SVG
-		if (!svgContent || !svgContent.trim()) {
-			throw new Error('Empty SVG content');
-		}
+		// Modify SVG content: set fill color (same approach as Loqode)
+		svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		
-		if (!svgContent.includes('</svg>')) {
-			throw new Error('SVG missing closing tag');
-		}
-		
-		// Apply the requested color
-		const sanitizedColor = color?.trim() || '#000000';
-		svgContent = applyColor(svgContent, sanitizedColor);
-		
-		// Remove existing width/height first
+		// Remove existing width/height and add new size
+		const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
 		svgContent = svgContent.replace(/\s*width\s*=\s*"[^"]*"/gi, '');
 		svgContent = svgContent.replace(/\s*height\s*=\s*"[^"]*"/gi, '');
-		
-		// Add new width and height
 		svgContent = svgContent.replace(
 			/<svg([^>]*?)>/,
 			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 		);
 		
-		// Convert to base64 data URL (Glide needs data URL, not regular URL)
-		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
-		return `data:image/svg+xml;base64,${base64}`;
-		
+		// Encode the modified SVG to a Data URL (same as Loqode)
+		let svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
+		return svgDataUrl;
 	} catch (error) {
-		console.error('Error rendering icon:', error);
-		return "";
+		console.error('Failed to fetch or process the SVG:', error);
+		return ""; // Return empty on error (same as Loqode)
 	}
 }
 
-// Main function for Glide - must be defined immediately
-console.log('About to define window.function...');
-
-// Define the function immediately (not async in definition)
-window.function = function(iconName, color, size) {
-	console.log('=== window.function called by Glide ===');
-	console.log('Raw params:', { iconName, color, size });
-	console.log('Param types:', { 
-		iconName: typeof iconName, 
-		color: typeof color, 
-		size: typeof size 
-	});
-	
-	// Handle column references from Glide
-	iconName = iconName?.value ?? iconName ?? "";
-	color = color?.value ?? color ?? "#000000";
-	size = size?.value ?? size ?? "24";
-	
-	iconName = String(iconName).trim();
-	color = String(color).trim() || "#000000";
-	size = String(size).trim() || "24";
-	
-	console.log('Parsed params:', { iconName, color, size });
-	
-	if (!iconName) {
-		console.warn('No icon name provided');
-		return "";
-	}
-	
-	// Return promise - Glide can handle async functions
-	return renderSimpleIcon(iconName, color, size).then(result => {
-		console.log('Returning result, length:', result ? result.length : 0);
-		return result;
-	}).catch(error => {
-		console.error('Error in renderSimpleIcon:', error);
-		return "";
-	});
-}
-
-// Export for testing
-window.renderSimpleIcon = renderSimpleIcon;
-
-// Log that everything is set up
-console.log('window.function defined:', typeof window.function);
-console.log('window.renderSimpleIcon defined:', typeof window.renderSimpleIcon);
