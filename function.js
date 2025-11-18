@@ -127,10 +127,32 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
-		// Modify SVG to add size
+		// Ensure SVG has xmlns attribute (required for proper rendering)
+		if (!svgContent.includes('xmlns=')) {
+			svgContent = svgContent.replace(
+				/<svg([^>]*)>/,
+				`<svg$1 xmlns="http://www.w3.org/2000/svg">`
+			);
+		}
+		
+		// Modify SVG to add size (preserve all existing attributes)
 		svgContent = svgContent.replace(
 			/<svg([^>]*)>/,
-			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
+			(match, attrs) => {
+				// Check if width/height already exist
+				const hasWidth = /width\s*=/i.test(attrs);
+				const hasHeight = /height\s*=/i.test(attrs);
+				
+				if (hasWidth && hasHeight) {
+					// Replace existing width/height
+					return match
+						.replace(/width\s*=\s*"[^"]*"/i, `width="${sizeNum}"`)
+						.replace(/height\s*=\s*"[^"]*"/i, `height="${sizeNum}"`);
+				} else {
+					// Add width and height
+					return `<svg${attrs} width="${sizeNum}" height="${sizeNum}">`;
+				}
+			}
 		);
 		
 		// Ensure SVG is valid and complete
