@@ -256,7 +256,7 @@ try {
 
 // Also try setting it as a property descriptor to catch any access
 let functionCallCount = 0;
-const originalFunction = window.function;
+let originalFunction = window.function;
 Object.defineProperty(window, 'function', {
 	get: function() {
 		console.log('=== window.function accessed ===', ++functionCallCount);
