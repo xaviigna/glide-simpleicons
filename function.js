@@ -82,10 +82,10 @@ function extractPathFromSVG(svg) {
 	return path ? path.getAttribute('d') : null;
 }
 
-// Render Simple Icon
+// Render Simple Icon - returns data URL for Glide
 async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	if (!iconName) {
-		throw new Error('Icon name is required');
+		return ""; // Return empty string on error (Glide expects URL or empty)
 	}
 	
 	// Parse size to number (since Glide passes it as string)
@@ -99,27 +99,20 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		const pathData = extractPathFromSVG(svg);
 		
 		if (!pathData) {
-			throw new Error(`Could not extract path from icon: ${iconName}`);
+			console.error(`Could not extract path from icon: ${iconName}`);
+			return "";
 		}
 		
 		// Create new SVG with custom color and size
-		const newSVG = `
-			<svg 
-				role="img" 
-				viewBox="0 0 24 24" 
-				width="${sizeNum}" 
-				height="${sizeNum}" 
-				xmlns="http://www.w3.org/2000/svg"
-				style="display: inline-block; vertical-align: middle;"
-			>
-				<path d="${pathData}" fill="${color}"/>
-			</svg>
-		`;
+		const newSVG = `<svg role="img" viewBox="0 0 24 24" width="${sizeNum}" height="${sizeNum}" xmlns="http://www.w3.org/2000/svg"><path d="${pathData}" fill="${color}"/></svg>`;
 		
-		return newSVG;
+		// Convert SVG to data URL (base64 encoded)
+		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(newSVG)))}`;
+		
+		return svgDataUrl;
 	} catch (error) {
 		console.error('Error rendering icon:', error);
-		return `<span style="color: red;">Error: ${error.message}</span>`;
+		return ""; // Return empty string on error
 	}
 }
 
@@ -157,19 +150,23 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 	return `<span style="color: #999;">Loading icon: ${iconName}...</span>`;
 }
 
-// Main function for Glide
-function renderIcon(iconName, color = '#000000', size = 24) {
-	// For Glide, we'll use the async version but return a promise
-	// Glide should handle promises
-	return renderSimpleIcon(iconName, color, size);
+// Main function for Glide - must be exported as window.function
+window.function = async function(iconName, color, size) {
+	// Get values from Glide parameters (they come as objects with .value property)
+	const iconNameValue = iconName?.value || iconName || "";
+	const colorValue = color?.value || color || "#000000";
+	const sizeValue = size?.value || size || "24";
+	
+	// Call the render function
+	return await renderSimpleIcon(iconNameValue, colorValue, sizeValue);
 }
 
-// Export for different environments
+// Also export for backwards compatibility and testing
 if (typeof module !== 'undefined' && module.exports) {
-	module.exports = { renderIcon, renderSimpleIcon, renderSimpleIconSync };
+	module.exports = { renderIcon: window.function, renderSimpleIcon, renderSimpleIconSync };
 } else {
 	window.renderSimpleIcon = renderSimpleIcon;
 	window.renderSimpleIconSync = renderSimpleIconSync;
-	window.renderIcon = renderIcon;
+	window.renderIcon = window.function;
 }
 
