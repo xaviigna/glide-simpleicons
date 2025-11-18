@@ -133,8 +133,19 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 		);
 		
+		// Ensure SVG is valid and complete
+		if (!svgContent || !svgContent.trim()) {
+			throw new Error('Empty SVG content');
+		}
+		
 		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
-		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
+		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
+		const svgDataUrl = `data:image/svg+xml;base64,${base64}`;
+		
+		console.log('SVG length:', svgContent.length);
+		console.log('Base64 length:', base64.length);
+		console.log('Data URL length:', svgDataUrl.length);
+		console.log('Data URL preview:', svgDataUrl.substring(0, 100) + '...');
 		
 		return svgDataUrl;
 	} catch (error) {
@@ -244,10 +255,22 @@ try {
 }
 
 // Also try setting it as a property descriptor to catch any access
+let functionCallCount = 0;
+const originalFunction = window.function;
 Object.defineProperty(window, 'function', {
-	value: window.function,
-	writable: true,
+	get: function() {
+		console.log('=== window.function accessed ===', ++functionCallCount);
+		return originalFunction;
+	},
+	set: function(value) {
+		console.log('=== window.function being set ===', value);
+		originalFunction = value;
+	},
 	configurable: true,
 	enumerable: true
 });
+
+// Also log when window.function is accessed via different methods
+const originalGetProperty = Object.getOwnPropertyDescriptor(window, 'function');
+console.log('window.function property descriptor:', originalGetProperty);
 
