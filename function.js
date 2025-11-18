@@ -115,6 +115,9 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 
 // Main function for Glide
 window.function = async function(iconName, color, size) {
+	console.log('=== window.function called by Glide ===');
+	console.log('Raw params:', { iconName, color, size });
+	
 	// Handle column references from Glide
 	iconName = iconName?.value ?? iconName ?? "";
 	color = color?.value ?? color ?? "#000000";
@@ -124,11 +127,16 @@ window.function = async function(iconName, color, size) {
 	color = String(color).trim() || "#000000";
 	size = String(size).trim() || "24";
 	
+	console.log('Parsed params:', { iconName, color, size });
+	
 	if (!iconName) {
+		console.warn('No icon name provided');
 		return "";
 	}
 	
-	return await renderSimpleIcon(iconName, color, size);
+	const result = await renderSimpleIcon(iconName, color, size);
+	console.log('Returning result, length:', result ? result.length : 0);
+	return result;
 }
 
 // Export for testing
