@@ -229,4 +229,25 @@ if (typeof module !== 'undefined' && module.exports) {
 // Log that function is defined
 console.log('window.function defined:', typeof window.function);
 console.log('window.function name:', window.function.name);
+console.log('window.function toString:', window.function.toString().substring(0, 100));
+
+// Test if we can call it manually
+try {
+	console.log('Testing manual call...');
+	const testResult = window.function('Google', '#000000', '24');
+	console.log('Manual call result type:', typeof testResult);
+	if (testResult && typeof testResult.then === 'function') {
+		testResult.then(r => console.log('Manual call resolved:', r ? 'Success' : 'Empty'));
+	}
+} catch (e) {
+	console.error('Manual call error:', e);
+}
+
+// Also try setting it as a property descriptor to catch any access
+Object.defineProperty(window, 'function', {
+	value: window.function,
+	writable: true,
+	configurable: true,
+	enumerable: true
+});
 
