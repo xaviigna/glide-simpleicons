@@ -99,8 +99,9 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		const slug = titleToSlug(iconName);
 		let svgContent = null;
 		
-		// Try Simple Icons CDN service first (handles colors)
+		// Try Simple Icons CDN service first (handles colors automatically)
 		// Format: https://cdn.simpleicons.org/[ICON SLUG]/[COLOR]
+		// According to README: colors can be hex (with or without #) or CSS keywords
 		const colorCode = color.replace('#', '');
 		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
@@ -108,9 +109,10 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			const response = await fetch(cdnUrl);
 			if (response.ok) {
 				svgContent = await response.text();
+				console.log('Fetched from cdn.simpleicons.org');
 			}
 		} catch (e) {
-			// CDN service failed, fall back to jsDelivr
+			console.log('cdn.simpleicons.org failed, trying jsDelivr');
 		}
 		
 		// Fallback: Fetch from jsDelivr and apply color ourselves
@@ -122,36 +124,25 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			}
 			
 			svgContent = await response.text();
+			console.log('Fetched from jsDelivr');
 			
-			// Apply color to the SVG
+			// Apply color to the SVG (only needed for jsDelivr fallback)
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
-		// Ensure SVG has xmlns attribute (required for proper rendering)
-		if (!svgContent.includes('xmlns=')) {
-			svgContent = svgContent.replace(
-				/<svg([^>]*)>/,
-				`<svg$1 xmlns="http://www.w3.org/2000/svg">`
-			);
-		}
-		
-		// Modify SVG to add size (preserve all existing attributes)
+		// SVGs from Simple Icons should already be valid and complete
+		// Only modify to add size attributes (width/height)
+		// Do this in a single pass to avoid multiple regex replacements
 		svgContent = svgContent.replace(
 			/<svg([^>]*)>/,
 			(match, attrs) => {
-				// Check if width/height already exist
-				const hasWidth = /width\s*=/i.test(attrs);
-				const hasHeight = /height\s*=/i.test(attrs);
+				// Remove existing width/height if present
+				let cleanAttrs = attrs
+					.replace(/\s*width\s*=\s*"[^"]*"/i, '')
+					.replace(/\s*height\s*=\s*"[^"]*"/i, '');
 				
-				if (hasWidth && hasHeight) {
-					// Replace existing width/height
-					return match
-						.replace(/width\s*=\s*"[^"]*"/i, `width="${sizeNum}"`)
-						.replace(/height\s*=\s*"[^"]*"/i, `height="${sizeNum}"`);
-				} else {
-					// Add width and height
-					return `<svg${attrs} width="${sizeNum}" height="${sizeNum}">`;
-				}
+				// Add new width and height
+				return `<svg${cleanAttrs} width="${sizeNum}" height="${sizeNum}">`;
 			}
 		);
 		
