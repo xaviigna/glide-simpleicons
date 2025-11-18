@@ -1,16 +1,12 @@
 /**
  * Glide Plugin Function for Simple Icons
  * Renders Simple Icons with customizable color and size
+ * Based on Loqode icons plugin pattern
  */
 
-// Log that script is loading
 console.log('Simple Icons function.js loaded');
 
-// Cache for icon SVGs
-const iconCache = new Map();
-
 // Convert title to slug (matching simple-icons naming convention)
-// This matches the SDK implementation
 const TITLE_TO_SLUG_REPLACEMENTS = {
 	'+': 'plus',
 	'.': 'dot',
@@ -44,269 +40,76 @@ function titleToSlug(title) {
 		.replaceAll(TITLE_TO_SLUG_RANGE_REGEX, '');
 }
 
-// Fetch icon SVG from CDN
-async function fetchIconSVG(iconName) {
-	// Check cache first (by both name and slug)
-	const slug = titleToSlug(iconName);
-	if (iconCache.has(iconName)) {
-		return iconCache.get(iconName);
-	}
-	if (iconCache.has(slug)) {
-		const svg = iconCache.get(slug);
-		iconCache.set(iconName, svg); // Cache by name too
-		return svg;
-	}
-	
-	try {
-		// Try fetching by slug
-		const url = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
-		
-		const response = await fetch(url);
-		if (!response.ok) {
-			throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
-		}
-		
-		const svg = await response.text();
-		// Cache by both name and slug for faster lookups
-		iconCache.set(iconName, svg);
-		iconCache.set(slug, svg);
-		return svg;
-	} catch (error) {
-		console.error(`Error fetching icon ${iconName}:`, error);
-		throw error;
-	}
-}
-
-// Extract path from SVG
-function extractPathFromSVG(svg) {
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(svg, 'image/svg+xml');
-	const path = doc.querySelector('path');
-	return path ? path.getAttribute('d') : null;
-}
-
 // Render Simple Icon - returns data URL for Glide
 async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	if (!iconName) {
-		return ""; // Return empty string on error (Glide expects URL or empty)
+		return "";
 	}
 	
-	// Parse size to number (since Glide passes it as string)
 	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
+	const slug = titleToSlug(iconName);
 	
 	try {
-		// Convert icon name to slug
-		const slug = titleToSlug(iconName);
-		let svgContent = null;
-		
-		// Try Simple Icons CDN service first (handles colors automatically)
-		// Format: https://cdn.simpleicons.org/[ICON SLUG]/[COLOR]
-		// According to README: colors can be hex (with or without #) or CSS keywords
+		// Use Simple Icons CDN with color
 		const colorCode = color.replace('#', '');
 		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
-		try {
-			const response = await fetch(cdnUrl);
-			if (response.ok) {
-				svgContent = await response.text();
-				console.log('Fetched from cdn.simpleicons.org');
+		let response = await fetch(cdnUrl);
+		
+		// Fallback to jsDelivr if CDN fails
+		if (!response.ok) {
+			const jsDelivrUrl = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
+			response = await fetch(jsDelivrUrl);
+			if (!response.ok) {
+				throw new Error(`Icon not found: ${iconName}`);
 			}
-		} catch (e) {
-			console.log('cdn.simpleicons.org failed, trying jsDelivr');
 		}
 		
-		// Fallback: Fetch from jsDelivr and apply color ourselves
-		if (!svgContent) {
-			const jsDelivrUrl = `https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/${slug}.svg`;
-			const response = await fetch(jsDelivrUrl);
-			if (!response.ok) {
-				throw new Error(`Icon not found: ${iconName} (tried slug: ${slug})`);
-			}
-			
-			svgContent = await response.text();
-			console.log('Fetched from jsDelivr');
-			
-			// Apply color to the SVG (only needed for jsDelivr fallback)
+		let svgContent = await response.text();
+		
+		// If from jsDelivr, apply color
+		if (!cdnUrl.includes('cdn.simpleicons.org') || !response.ok) {
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
-		// SVGs from Simple Icons should already be valid and complete
-		// Only modify to add size attributes (width/height)
-		// Do this in a single pass to avoid multiple regex replacements
-		// Make sure we preserve all existing attributes including xmlns, viewBox, etc.
+		// Add/modify width and height - simple approach like Loqode
 		svgContent = svgContent.replace(
-			/<svg([^>]*)>/,
-			(match, attrs) => {
-				// Remove existing width/height if present (but keep everything else)
-				let cleanAttrs = attrs
-					.replace(/\s*width\s*=\s*"[^"]*"/i, '')
-					.replace(/\s*height\s*=\s*"[^"]*"/i, '');
-				
-				// Ensure there's a space before adding new attributes
-				const separator = cleanAttrs.trim() ? ' ' : '';
-				
-				// Add new width and height
-				return `<svg${cleanAttrs}${separator}width="${sizeNum}" height="${sizeNum}">`;
-			}
+			/<svg([^>]*?)>/,
+			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 		);
 		
-		// Ensure the SVG is properly closed (should already be, but double-check)
-		if (!svgContent.trim().endsWith('</svg>')) {
-			console.warn('SVG does not end with </svg>, appending it');
-			svgContent = svgContent.trim() + '</svg>';
-		}
-		
-		// Ensure SVG is valid and complete
-		if (!svgContent || !svgContent.trim()) {
-			throw new Error('Empty SVG content');
-		}
-		
-		// Validate SVG structure - must start with <svg and end with </svg>
-		if (!svgContent.trim().startsWith('<svg')) {
-			throw new Error('Invalid SVG: does not start with <svg');
-		}
+		// Ensure SVG is complete
 		if (!svgContent.includes('</svg>')) {
-			throw new Error('Invalid SVG: missing closing </svg> tag');
+			svgContent += '</svg>';
 		}
 		
-		// Log full SVG for debugging (first 200 chars)
-		console.log('SVG preview (first 200 chars):', svgContent.substring(0, 200));
-		console.log('SVG ends with:', svgContent.substring(svgContent.length - 50));
-		console.log('SVG length:', svgContent.length);
-		
-		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
-		// Standard UTF-8 to base64 encoding
+		// Convert to base64 data URL (same as Loqode)
 		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
-		const svgDataUrl = `data:image/svg+xml;base64,${base64}`;
+		return `data:image/svg+xml;base64,${base64}`;
 		
-		console.log('Base64 length:', base64.length);
-		console.log('Data URL length:', svgDataUrl.length);
-		console.log('Data URL preview (first 150 chars):', svgDataUrl.substring(0, 150));
-		
-		return svgDataUrl;
 	} catch (error) {
 		console.error('Error rendering icon:', error);
-		return ""; // Return empty string on error
+		return "";
 	}
 }
 
-// Synchronous version for immediate rendering (uses cached data if available)
-function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
-	if (!iconName) {
-		return '<span style="color: red;">Error: Icon name is required</span>';
-	}
-	
-	// Parse size to number (since Glide passes it as string)
-	const sizeNum = typeof size === 'string' ? parseInt(size, 10) || 24 : size || 24;
-	
-	// Try to get from cache first
-	const cachedSVG = iconCache.get(iconName);
-	if (cachedSVG) {
-		const pathData = extractPathFromSVG(cachedSVG);
-		if (pathData) {
-			return `
-				<svg 
-					role="img" 
-					viewBox="0 0 24 24" 
-					width="${sizeNum}" 
-					height="${sizeNum}" 
-					xmlns="http://www.w3.org/2000/svg"
-					style="display: inline-block; vertical-align: middle;"
-				>
-					<path d="${pathData}" fill="${color}"/>
-				</svg>
-			`;
-		}
-	}
-	
-	// If not cached, return placeholder and trigger async load
-	renderSimpleIcon(iconName, color, size).catch(() => {});
-	return `<span style="color: #999;">Loading icon: ${iconName}...</span>`;
-}
-
-// Main function for Glide - must be exported as window.function
-// Following the same pattern as Loqode icons plugin
-console.log('Defining window.function...');
+// Main function for Glide
 window.function = async function(iconName, color, size) {
-	console.log('=== Simple Icons Plugin Called ===');
-	console.log('Raw params:', { iconName, color, size });
-	
-	// Get values or set defaults (same pattern as Loqode - using .value property)
 	// Handle column references from Glide
 	iconName = iconName?.value ?? iconName ?? "";
 	color = color?.value ?? color ?? "#000000";
 	size = size?.value ?? size ?? "24";
 	
-	// Convert to string and trim whitespace
 	iconName = String(iconName).trim();
 	color = String(color).trim() || "#000000";
 	size = String(size).trim() || "24";
 	
-	console.log('Parsed params:', { iconName, color, size });
-	
-	// If no icon name, return empty
 	if (!iconName) {
-		console.warn('Simple Icons: No icon name provided');
 		return "";
 	}
 	
-	// Only fetch the ONE icon specified by the user
-	try {
-		console.log('Fetching icon:', iconName);
-		const result = await renderSimpleIcon(iconName, color, size);
-		console.log('Icon result:', result ? `Success (${result.substring(0, 50)}...)` : 'Empty');
-		return result || "";
-	} catch (error) {
-		console.error('=== Simple Icons Error ===');
-		console.error('Failed to fetch or process the SVG:', error);
-		console.error('Error details:', error.message, error.stack);
-		return ""; // Return empty on error
-	}
+	return await renderSimpleIcon(iconName, color, size);
 }
 
-// Also export for backwards compatibility and testing
-if (typeof module !== 'undefined' && module.exports) {
-	module.exports = { renderIcon: window.function, renderSimpleIcon, renderSimpleIconSync };
-} else {
-	window.renderSimpleIcon = renderSimpleIcon;
-	window.renderSimpleIconSync = renderSimpleIconSync;
-	window.renderIcon = window.function;
-}
-
-// Log that function is defined
-console.log('window.function defined:', typeof window.function);
-console.log('window.function name:', window.function.name);
-console.log('window.function toString:', window.function.toString().substring(0, 100));
-
-// Test if we can call it manually
-try {
-	console.log('Testing manual call...');
-	const testResult = window.function('Google', '#000000', '24');
-	console.log('Manual call result type:', typeof testResult);
-	if (testResult && typeof testResult.then === 'function') {
-		testResult.then(r => console.log('Manual call resolved:', r ? 'Success' : 'Empty'));
-	}
-} catch (e) {
-	console.error('Manual call error:', e);
-}
-
-// Also try setting it as a property descriptor to catch any access
-let functionCallCount = 0;
-let originalFunction = window.function;
-Object.defineProperty(window, 'function', {
-	get: function() {
-		console.log('=== window.function accessed ===', ++functionCallCount);
-		return originalFunction;
-	},
-	set: function(value) {
-		console.log('=== window.function being set ===', value);
-		originalFunction = value;
-	},
-	configurable: true,
-	enumerable: true
-});
-
-// Also log when window.function is accessed via different methods
-const originalGetProperty = Object.getOwnPropertyDescriptor(window, 'function');
-console.log('window.function property descriptor:', originalGetProperty);
-
+// Export for testing
+window.renderSimpleIcon = renderSimpleIcon;
