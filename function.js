@@ -114,11 +114,18 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 	}
 }
 
-// Main function for Glide
+// Main function for Glide - must be defined immediately
 console.log('About to define window.function...');
-window.function = async function(iconName, color, size) {
+
+// Define the function immediately (not async in definition)
+window.function = function(iconName, color, size) {
 	console.log('=== window.function called by Glide ===');
 	console.log('Raw params:', { iconName, color, size });
+	console.log('Param types:', { 
+		iconName: typeof iconName, 
+		color: typeof color, 
+		size: typeof size 
+	});
 	
 	// Handle column references from Glide
 	iconName = iconName?.value ?? iconName ?? "";
@@ -136,9 +143,14 @@ window.function = async function(iconName, color, size) {
 		return "";
 	}
 	
-	const result = await renderSimpleIcon(iconName, color, size);
-	console.log('Returning result, length:', result ? result.length : 0);
-	return result;
+	// Return promise - Glide can handle async functions
+	return renderSimpleIcon(iconName, color, size).then(result => {
+		console.log('Returning result, length:', result ? result.length : 0);
+		return result;
+	}).catch(error => {
+		console.error('Error in renderSimpleIcon:', error);
+		return "";
+	});
 }
 
 // Export for testing
