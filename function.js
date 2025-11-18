@@ -151,68 +151,25 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 }
 
 // Main function for Glide - must be exported as window.function
+// Following the same pattern as Loqode icons plugin
 window.function = async function(iconName, color, size) {
+	// Get values or set defaults (same pattern as Loqode)
+	iconName = iconName?.value || iconName || "";
+	color = color?.value || color || "#000000";
+	size = size?.value || size || "24";
+	
+	// If no icon name, return empty
+	if (!iconName) {
+		return "";
+	}
+	
 	try {
-		// Get values from Glide parameters (they come as objects with .value property)
-		// Handle different parameter formats that Glide might pass
-		let iconNameValue = "";
-		if (iconName) {
-			if (typeof iconName === 'object' && iconName.value !== undefined) {
-				iconNameValue = iconName.value;
-			} else if (typeof iconName === 'string') {
-				iconNameValue = iconName;
-			} else {
-				iconNameValue = String(iconName);
-			}
-		}
-		
-		let colorValue = "#000000";
-		if (color) {
-			if (typeof color === 'object' && color.value !== undefined) {
-				colorValue = color.value;
-			} else if (typeof color === 'string') {
-				colorValue = color;
-			} else {
-				colorValue = String(color);
-			}
-		}
-		
-		let sizeValue = "24";
-		if (size) {
-			if (typeof size === 'object' && size.value !== undefined) {
-				sizeValue = size.value;
-			} else if (typeof size === 'string' || typeof size === 'number') {
-				sizeValue = String(size);
-			} else {
-				sizeValue = String(size);
-			}
-		}
-		
-		// Trim whitespace
-		iconNameValue = String(iconNameValue).trim();
-		colorValue = String(colorValue).trim() || "#000000";
-		sizeValue = String(sizeValue).trim() || "24";
-		
-		// Debug logging
-		console.log('Simple Icons Plugin Input:', { iconName, color, size });
-		console.log('Simple Icons Plugin Parsed:', { iconNameValue, colorValue, sizeValue });
-		
-		// If no icon name, return empty
-		if (!iconNameValue) {
-			console.warn('Simple Icons Plugin: No icon name provided');
-			return "";
-		}
-		
 		// Call the render function
-		const result = await renderSimpleIcon(iconNameValue, colorValue, sizeValue);
-		
-		console.log('Simple Icons Plugin Result:', result ? `Data URL generated (${result.substring(0, 50)}...)` : 'Empty result');
-		
+		const result = await renderSimpleIcon(iconName, color, size);
 		return result || "";
 	} catch (error) {
-		console.error('Simple Icons Plugin Error:', error);
-		console.error('Error stack:', error.stack);
-		return ""; // Return empty string on error
+		console.error('Failed to fetch or process the SVG:', error);
+		return ""; // Return empty on error
 	}
 }
 
