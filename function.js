@@ -106,8 +106,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		// Create new SVG with custom color and size
 		const newSVG = `<svg role="img" viewBox="0 0 24 24" width="${sizeNum}" height="${sizeNum}" xmlns="http://www.w3.org/2000/svg"><path d="${pathData}" fill="${color}"/></svg>`;
 		
-		// Convert SVG to data URL (URL encoded - more reliable than base64)
-		const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(newSVG)}`;
+		// Convert SVG to data URL (base64 encoded - same as Loqode plugin)
+		const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(newSVG)))}`;
 		
 		return svgDataUrl;
 	} catch (error) {
