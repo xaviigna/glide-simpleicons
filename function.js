@@ -55,6 +55,7 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		const cdnUrl = `https://cdn.simpleicons.org/${slug}/${colorCode}`;
 		
 		let response = await fetch(cdnUrl);
+		let fromCDN = response.ok;
 		
 		// Fallback to jsDelivr if CDN fails
 		if (!response.ok) {
@@ -67,8 +68,8 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		
 		let svgContent = await response.text();
 		
-		// If from jsDelivr, apply color
-		if (!cdnUrl.includes('cdn.simpleicons.org') || !response.ok) {
+		// If from jsDelivr (not CDN), apply color manually
+		if (!fromCDN) {
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
