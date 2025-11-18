@@ -133,18 +133,28 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 		// SVGs from Simple Icons should already be valid and complete
 		// Only modify to add size attributes (width/height)
 		// Do this in a single pass to avoid multiple regex replacements
+		// Make sure we preserve all existing attributes including xmlns, viewBox, etc.
 		svgContent = svgContent.replace(
 			/<svg([^>]*)>/,
 			(match, attrs) => {
-				// Remove existing width/height if present
+				// Remove existing width/height if present (but keep everything else)
 				let cleanAttrs = attrs
 					.replace(/\s*width\s*=\s*"[^"]*"/i, '')
 					.replace(/\s*height\s*=\s*"[^"]*"/i, '');
 				
+				// Ensure there's a space before adding new attributes
+				const separator = cleanAttrs.trim() ? ' ' : '';
+				
 				// Add new width and height
-				return `<svg${cleanAttrs} width="${sizeNum}" height="${sizeNum}">`;
+				return `<svg${cleanAttrs}${separator}width="${sizeNum}" height="${sizeNum}">`;
 			}
 		);
+		
+		// Ensure the SVG is properly closed (should already be, but double-check)
+		if (!svgContent.trim().endsWith('</svg>')) {
+			console.warn('SVG does not end with </svg>, appending it');
+			svgContent = svgContent.trim() + '</svg>';
+		}
 		
 		// Ensure SVG is valid and complete
 		if (!svgContent || !svgContent.trim()) {
