@@ -73,20 +73,39 @@ async function renderSimpleIcon(iconName, color = '#000000', size = 24) {
 			svgContent = svgContent.replace(/fill="[^"]*"/g, `fill="${color}"`);
 		}
 		
+		// Validate SVG is complete before modifying
+		if (!svgContent || !svgContent.trim()) {
+			throw new Error('Empty SVG content');
+		}
+		
+		if (!svgContent.includes('</svg>')) {
+			throw new Error('SVG missing closing tag');
+		}
+		
 		// Add/modify width and height - simple approach like Loqode
+		// Remove existing width/height first to avoid duplicates
+		svgContent = svgContent.replace(/\s*width\s*=\s*"[^"]*"/gi, '');
+		svgContent = svgContent.replace(/\s*height\s*=\s*"[^"]*"/gi, '');
+		
+		// Add width and height to the opening svg tag
 		svgContent = svgContent.replace(
 			/<svg([^>]*?)>/,
 			`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 		);
 		
-		// Ensure SVG is complete
-		if (!svgContent.includes('</svg>')) {
-			svgContent += '</svg>';
-		}
+		// Log for debugging
+		console.log('SVG length:', svgContent.length);
+		console.log('SVG starts with:', svgContent.substring(0, 100));
+		console.log('SVG ends with:', svgContent.substring(svgContent.length - 50));
 		
 		// Convert to base64 data URL (same as Loqode)
 		const base64 = btoa(unescape(encodeURIComponent(svgContent)));
-		return `data:image/svg+xml;base64,${base64}`;
+		const dataUrl = `data:image/svg+xml;base64,${base64}`;
+		
+		console.log('Data URL length:', dataUrl.length);
+		console.log('Data URL preview:', dataUrl.substring(0, 150));
+		
+		return dataUrl;
 		
 	} catch (error) {
 		console.error('Error rendering icon:', error);
