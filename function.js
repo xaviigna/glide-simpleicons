@@ -153,22 +153,32 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 // Main function for Glide - must be exported as window.function
 // Following the same pattern as Loqode icons plugin
 window.function = async function(iconName, color, size) {
+	console.log('=== Simple Icons Plugin Called ===');
+	console.log('Raw parameters:', { iconName, color, size });
+	
 	// Get values or set defaults (same pattern as Loqode)
 	iconName = iconName?.value || iconName || "";
 	color = color?.value || color || "#000000";
 	size = size?.value || size || "24";
 	
+	console.log('Parsed parameters:', { iconName, color, size });
+	
 	// If no icon name, return empty
 	if (!iconName) {
+		console.warn('Simple Icons: No icon name provided');
 		return "";
 	}
 	
 	try {
+		console.log('Fetching icon:', iconName);
 		// Call the render function
 		const result = await renderSimpleIcon(iconName, color, size);
+		console.log('Icon result:', result ? `Success (${result.length} chars)` : 'Empty');
 		return result || "";
 	} catch (error) {
+		console.error('=== Simple Icons Error ===');
 		console.error('Failed to fetch or process the SVG:', error);
+		console.error('Error details:', error.message, error.stack);
 		return ""; // Return empty on error
 	}
 }
