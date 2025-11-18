@@ -193,8 +193,8 @@ window.function = async function(iconName, color, size) {
 		return "";
 	}
 	
+	// Only fetch the ONE icon specified by the user
 	try {
-		// Call the render function
 		const result = await renderSimpleIcon(iconName, color, size);
 		return result || "";
 	} catch (error) {
