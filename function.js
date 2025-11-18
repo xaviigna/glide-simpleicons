@@ -3,6 +3,9 @@
  * Renders Simple Icons with customizable color and size
  */
 
+// Log that script is loading
+console.log('Simple Icons function.js loaded');
+
 // Cache for icon SVGs
 const iconCache = new Map();
 
@@ -176,6 +179,7 @@ function renderSimpleIconSync(iconName, color = '#000000', size = 24) {
 
 // Main function for Glide - must be exported as window.function
 // Following the same pattern as Loqode icons plugin
+console.log('Defining window.function...');
 window.function = async function(iconName, color, size) {
 	console.log('=== Simple Icons Plugin Called ===');
 	console.log('Raw params:', { iconName, color, size });
@@ -221,4 +225,8 @@ if (typeof module !== 'undefined' && module.exports) {
 	window.renderSimpleIconSync = renderSimpleIconSync;
 	window.renderIcon = window.function;
 }
+
+// Log that function is defined
+console.log('window.function defined:', typeof window.function);
+console.log('window.function name:', window.function.name);
 
