@@ -47,7 +47,7 @@ const TITLE_TO_SLUG_REPLACEMENTS = {
 		`<svg$1 width="${sizeNum}" height="${sizeNum}">`
 	  );
   
-	  const encoded = btoa(encodeURIComponent(svgContent));
+	 const encoded = btoa(unescape(encodeURIComponent(svgContent)));
 	  return `data:image/svg+xml;base64,${encoded}`;
 	} catch (error) {
 	  return "Error: Could not process SVG";
