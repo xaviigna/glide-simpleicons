@@ -14,7 +14,7 @@ async function loadIconsData() {
 	try {
 		// In Glide, we'll need to fetch from a CDN or include the data
 		// For now, we'll use a fetch to get the icons list
-		const response = await fetch('https://cdn.jsdelivr.net/npm/simple-icons@latest/data/simple-icons.json');
+		const response = await fetch('https://raw.githubusercontent.com/simple-icons/simple-icons/develop/data/simple-icons.json');
 		const data = await response.json();
 		iconsData = data;
 		iconsLoaded = true;
